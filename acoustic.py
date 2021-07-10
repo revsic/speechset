@@ -1,10 +1,10 @@
 from typing import Optional, Tuple
 
-import librosa
 import tensorflow as tf
 
 from .config import Config
 from .datasets.reader import DataReader
+from .utils.melstft import MelSTFT
 from .utils.normalizer import TextNormalizer
 
 
@@ -22,22 +22,8 @@ class AcousticDataset:
         self.rawset = rawset
         self.config = config
         self.normalized = None
-        # [fft // 2 + 1, mel]
-        melfilter = librosa.filters.mel(
-            config.sr, config.fft, config.mel, config.fmin, config.fmax).T
-        self.melfilter = tf.convert_to_tensor(melfilter)
+        self.melstft = MelSTFT(config)
         self.textnorm = TextNormalizer()
-
-    def labeler(self, text: tf.Tensor) -> tf.Tensor:
-        """Convert text to integer label.
-        Args:
-            text: string, text.
-        Returns:
-            labels: [tf.int32; S], labels.
-        """
-        text = text.numpy().decode('utf-8')
-        labels = self.textnorm.labeling(text)
-        return tf.convert_to_tensor(labels, dtype=tf.int32)
 
     def normalize(self, text: tf.Tensor, speech: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
@@ -53,37 +39,14 @@ class AcousticDataset:
                 mellen: tf.int32, mel lengths.
         """
         # [S]
-        labels = tf.py_function(self.labeler, [text], tf.int32)
+        labels = self.textnorm.tf_labeler(text)
         # S
         textlen = tf.shape(labels)[0]
         # [T // hop, mel]
-        mel = tf.squeeze(self.mel_fn(speech[None]), axis=0)
+        mel = tf.squeeze(self.melstft(speech[None]), axis=0)
         # T // hop
         mellen = tf.shape(mel)[0]
         return labels, mel, textlen, mellen
-
-    def mel_fn(self, signal: tf.Tensor) -> tf.Tensor:
-        """Generate log mel-spectrogram from input audio segment.
-        Args:
-            signal: [tf.float32; [B, T]], audio segment.
-        Returns:
-            logmel: [tf.float32; [B, T // hop, mel]], log mel-spectrogram.
-        """
-        padlen = self.config.win // 2
-        # [B, T + win - 1]
-        center_pad = tf.pad(signal, [[0, 0], [padlen, padlen]], mode='reflect')
-        # [B, T // hop, fft // 2 + 1]
-        stft = tf.signal.stft(
-            center_pad,
-            frame_length=self.config.win,
-            frame_step=self.config.hop,
-            fft_length=self.config.fft,
-            window_fn=self.config.window_fn())
-        # [B, T // hop, mel]
-        mel = tf.abs(stft) @ self.melfilter
-        # [B, T // hop, mel]
-        logmel = tf.math.log(tf.maximum(mel, self.config.eps))
-        return logmel
 
     def preproc(self, rawset: tf.data.Dataset) -> tf.data.Dataset:
         """Compose preprocessor.
