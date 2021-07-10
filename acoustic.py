@@ -9,7 +9,7 @@ from .utils.normalizer import TextNormalizer
 
 
 class AcousticDataset:
-    """Datset for text to acoustic features.
+    """Dataset for text to acoustic features.
     """
     VOCABS = len(TextNormalizer.GRAPHEMES) + 1
 
