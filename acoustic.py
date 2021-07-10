@@ -8,8 +8,8 @@ from .datasets.reader import DataReader
 from .utils.normalizer import TextNormalizer
 
 
-class TTSDataset:
-    """TTS-Dataset.
+class AcousticDataset:
+    """Datset for text to acoustic features.
     """
     VOCABS = len(TextNormalizer.GRAPHEMES) + 1
 
