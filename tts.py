@@ -4,8 +4,8 @@ import librosa
 import tensorflow as tf
 
 from .config import Config
-from .normalizer import TextNormalizer
-from .reader import DataReader
+from .datasets.reader import DataReader
+from .utils.normalizer import TextNormalizer
 
 
 class TTSDataset:
