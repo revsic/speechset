@@ -77,6 +77,6 @@ class TextNormalizer:
         """
         def labeler(text: tf.Tensor) -> tf.Tensor:
             text = text.numpy().decode('utf-8')
-            labels = self.textnorm.labeling(text)
+            labels = self.labeling(text)
             return tf.convert_to_tensor(labels, dtype=tf.int32)
         return tf.py_function(labeler, [text], tf.int32)
