@@ -64,7 +64,7 @@ class VocoderDataset(SpeechSet):
                 speechlen: [tf.int32; [B]], speech lengths.
         """
         return rawset \
-            .map(self.normalize) \
+            .map(self._datum_norm) \
             .padded_batch(
                 self.config.batch,
                 padded_shapes=([None, self.config.mel], [None], [], []))
