@@ -2,13 +2,14 @@ from typing import Optional, Tuple
 
 import tensorflow as tf
 
-from .config import Config
-from .datasets.reader import DataReader
-from .utils.melstft import MelSTFT
-from .utils.normalizer import TextNormalizer
+from .speechset import SpeechSet
+from ..config import Config
+from ..datasets.reader import DataReader
+from ..utils.melstft import MelSTFT
+from ..utils.normalizer import TextNormalizer
 
 
-class AcousticDataset:
+class AcousticDataset(SpeechSet):
     """Dataset for text to acoustic features.
     """
     VOCABS = len(TextNormalizer.GRAPHEMES) + 1
@@ -25,7 +26,14 @@ class AcousticDataset:
         self.melstft = MelSTFT(config)
         self.textnorm = TextNormalizer()
 
-    def normalize(self, text: tf.Tensor, speech: tf.Tensor) \
+    def reader(self) -> DataReader:
+        """Get file-format datum reader.
+        Returns:
+            data reader.
+        """
+        return self.rawset
+    
+    def _norm_datum(self, text: tf.Tensor, speech: tf.Tensor) \
             -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
         """Normalize datum.
         Args:
@@ -48,7 +56,7 @@ class AcousticDataset:
         mellen = tf.shape(mel)[0]
         return labels, mel, textlen, mellen
 
-    def preproc(self, rawset: tf.data.Dataset) -> tf.data.Dataset:
+    def normalize(self, rawset: tf.data.Dataset) -> tf.data.Dataset:
         """Compose preprocessor.
         Args:
             rawset: raw dataset, expected format
@@ -57,33 +65,12 @@ class AcousticDataset:
         Returns:
             preprocessed dataset.
                 text: [tf.int32; [B, S]], labeled sequence.
-                mel: [tf.float32; [B, T, config.mel]], mel-spectrogram.
+                mel: [tf.float32; [B, T // hop, config.mel]], mel-spectrogram.
                 textlen: [tf.int32; [B]], text lengths.
                 mellen: [tf.int32; [B]], mel lengths.
         """
         return rawset \
-            .map(self.normalize) \
+            .map(self._norm_datum) \
             .padded_batch(
                 self.config.batch,
                 padded_shapes=([None], [None, self.config.mel], [], []))
-
-    def dataset(self, split: Optional[int] = None) \
-            -> Tuple[tf.data.Dataset, Optional[tf.data.Dataset]]:
-        """Generate dataset.
-        Args:
-            split: train-test split point, size of the training samples.
-                if none is given, test set would not be provided.
-        Returns:
-            training, test dataset.
-                text: [tf.int32; [B, S]], labeled sequence.
-                mel: [tf.float32; [B, T, config.mel]], mel-spectrogram.
-                textlen: [tf.int32; [B]], text lengths.
-                mellen: [tf.int32; [B]], mel lengths.
-        """
-        dataset, preproc = self.rawset.dataset(), self.rawset.preproc()
-        if split is None:
-            return self.preproc(dataset.map(preproc)), None
-        # split and preprocess
-        train = self.preproc(dataset.take(split).map(preproc))
-        test = self.preproc(dataset.skip(split).map(preproc))
-        return train, test
