@@ -6,7 +6,11 @@ import tensorflow as tf
 class Config:
     """Configuration for dataset construction.
     """
-    def __init__(self):
+    def __init__(self, batch: int = 16):
+        """Initializer.
+        Args:
+            batch: size of the batch.
+        """
         # audio config
         self.sr = 22050
 
@@ -25,7 +29,7 @@ class Config:
         self.eps = 1e-5
 
         # sample size
-        self.batch = 16
+        self.batch = batch
 
     def window_fn(self) -> Callable:
         """Return window generator.
