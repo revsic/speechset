@@ -63,7 +63,3 @@ writer = tf.data.experimental.TFRecordWriter(f'{args.path}.tfrecord')
 writer.write(serializer(dataset))
 
 print('[*] success')
-
-"""
-python dump.py --reader ljspeech --data-dir D:\dataset\LJSpeech-1.1 --from-raw --target acoustic --path D:\dataset\LJSpeech-1.1\tfrecord\acoustic
-"""
