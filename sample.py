@@ -36,3 +36,11 @@ dataset, _ = vocoder.dataset()
 # unpack
 mel, audio, mellen, audiolen = next(iter(dataset))
 print(mel.shape, audio.shape, mellen.shape, audiolen.shape)
+
+# tfrecord
+record = speechset.TFRecordDataset(
+    config, 'D:\\dataset\\LJSpeech-1.1\\tfrecord\\acoustic.tfrecord', 'acoustic')
+_, dataset = record.dataset(13000)
+# unpack
+text, mel, textlen, mellen = next(iter(dataset))
+print(text.shape, mel.shape, textlen.shape, mellen.shape)
