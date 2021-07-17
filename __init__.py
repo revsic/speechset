@@ -1,2 +1,2 @@
 from .config import Config
-from .speeches import AcousticDataset, VocoderDataset
+from .speeches import AcousticDataset, TFRecordDataset, VocoderDataset
