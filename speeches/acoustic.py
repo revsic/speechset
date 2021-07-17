@@ -69,8 +69,9 @@ class AcousticDataset(SpeechSet):
                 textlen: [tf.int32; [B]], text lengths.
                 mellen: [tf.int32; [B]], mel lengths.
         """
-        return rawset \
-            .map(self._norm_datum) \
-            .padded_batch(
+        dataset = rawset.map(self._norm_datum)
+        if self.config.batch is not None:
+            dataset = dataset.padded_batch(
                 self.config.batch,
                 padded_shapes=([None], [None, self.config.mel], [], []))
+        return dataset

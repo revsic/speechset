@@ -63,8 +63,9 @@ class VocoderDataset(SpeechSet):
                 mellen: [tf.int32; [B]], mel lengths.
                 speechlen: [tf.int32; [B]], speech lengths.
         """
-        return rawset \
-            .map(self._datum_norm) \
-            .padded_batch(
+        dataset = rawset.map(self._datum_norm)
+        if self.config.batch is not None:
+            dataset = dataset.padded_batch(
                 self.config.batch,
                 padded_shapes=([None, self.config.mel], [None], [], []))
+        return dataset

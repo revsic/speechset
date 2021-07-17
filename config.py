@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 
 import tensorflow as tf
 
@@ -6,10 +6,11 @@ import tensorflow as tf
 class Config:
     """Configuration for dataset construction.
     """
-    def __init__(self, batch: int = 16):
+    def __init__(self, batch: Optional[int] = 16):
         """Initializer.
         Args:
             batch: size of the batch.
+                if None is provided, single datum will be returned.
         """
         # audio config
         self.sr = 22050
