@@ -70,17 +70,17 @@ class LJSpeech(DataReader):
         def load_and_lookup(path: str) -> Tuple[str, np.ndarray]:
             """Load audio and lookup text.
             Args:
-                path: tf.string, path
+                path: str, path
             Returns:
                 tuple,
-                    text: tf.string, text.
-                    audio: [tf.float32; T], raw speech signal in range(-1, 1).
+                    text: str, text.
+                    audio: [np.float32; T], raw speech signal in range(-1, 1).
             """
             # [T]
             audio, _ = librosa.load(path, sr=LJSpeech.SR)
-            # tf.string
+            # str
             path = os.path.basename(path).replace('.wav', '')
-            # tf.string, [tf.float32; T]
+            # str, [np.float32; T]
             return table.get(path, ''), audio
 
         return load_and_lookup
