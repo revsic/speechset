@@ -1,7 +1,5 @@
-from typing import Optional
-
 import librosa
-import tensorflow as tf
+import numpy as np
 
 from ..config import Config
 
@@ -15,34 +13,26 @@ class MelSTFT:
             config: STFT parameters.
         """
         self.config = config
-        # [fft // 2 + 1, mel], generate mel-filters
-        melfilter = librosa.filters.mel(
-            config.sr, config.fft, config.mel, config.fmin, config.fmax).T
-        self.melfilter = tf.convert_to_tensor(melfilter)
+        # [mel, fft // 2 + 1], generate mel-filters
+        self.melfilter = librosa.filters.mel(
+            config.sr, config.fft, config.mel, config.fmin, config.fmax)
 
-    def __call__(self, signal: tf.Tensor) -> tf.Tensor:
+    def __call__(self, signal: np.ndarray) -> np.ndarray:
         """Generate log-mel scale power spectrogram from inputs.
         Args:
-            signal: [tf.float32; [B, T]], speech signal.
+            signal: [np.float32; [T]], speech signal.
         Returns:
-            [tf.float32; [B, T // hop + 1, mel]], log-mel scale power spectrogram.
+            [np.float32; [T / hop, mel]], log-mel scale power spectrogram.
         """
-        padlen = self.config.win // 2
-        # [B, T + win]
-        padded = tf.pad(signal, [[0, 0], [padlen, padlen]], mode='reflect')
-        # [B, T // hop + 1, fft // 2 + 1]
-        stft = tf.signal.stft(
-            padded,
-            frame_length=self.config.win,
-            frame_step=self.config.hop,
-            fft_length=self.config.fft,
-            window_fn=self.config.window_fn())
-        # [B, T // hop + 1, mel]
-        mel = tf.abs(stft) @ self.melfilter
-        # [B, T // hop + 1, mel]
-        return tf.math.log(tf.maximum(mel, self.config.eps))
-    
-    def mellen(self, speechlen: tf.Tensor) -> tf.Tensor:
-        """Compute length of the mel-spectrogram from source audio length.
-        """
-        return speechlen // self.config.hop + 1
+        # [fft // 2 + 1, T // hop + 1]
+        stft = librosa.stft(
+            signal,
+            self.config.fft,
+            self.config.hop,
+            self.config.win,
+            self.config.win_fn,
+            center=True, mode='reflect')
+        # [mel, T // hop + 1]
+        mel = self.melfilter @ np.abs(stft)
+        # [T // hop + 1, mel]
+        return np.log(np.maximum(mel, self.config.eps)).T
