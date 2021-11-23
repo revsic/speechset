@@ -11,6 +11,7 @@ class SpeechSet:
     def __init__(self, reader: DataReader):
         """Caching dataset and preprocessor from reader.
         """
+        self.reader = reader
         self.dataset, self.preproc = reader.dataset(), reader.preproc()
 
     def normalize(self, text: str, speech: np.ndarray) -> Any:
