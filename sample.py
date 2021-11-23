@@ -2,6 +2,7 @@ import sys
 sys.path.append('..')
 
 import speechset
+sys.path.pop()
 
 
 # construct data reader
@@ -13,16 +14,14 @@ config = speechset.Config()
 # construct acoustic model
 acoustic = speechset.AcousticDataset(lj, config)
 
-# generate tf.data.Dataset
-dataset, _ = acoustic.dataset()
 # unpack
-text, mel, textlen, mellen = next(iter(dataset))
+text, mel, textlen, mellen = acoustic[0]
 print(text.shape, mel.shape, textlen.shape, mellen.shape)
 
 # split sample
-trainset, testset = acoustic.dataset(1000)
+testset = acoustic.split(1000)
 # unpack
-text, mel, textlen, mellen = next(iter(trainset))
+text, mel, textlen, mellen = acoustic.collate(acoustic[0:3])
 print(text.shape, mel.shape, textlen.shape, mellen.shape)
 
 text, mel, textlen, mellen = next(iter(testset))
@@ -31,16 +30,6 @@ print(text.shape, mel.shape, textlen.shape, mellen.shape)
 # construct vocoder model
 vocoder = speechset.VocoderDataset(lj, config)
 
-# generate tf.data.Dataset
-dataset, _ = vocoder.dataset()
 # unpack
-mel, audio, mellen, audiolen = next(iter(dataset))
+mel, audio, mellen, audiolen = next(iter(vocoder))
 print(mel.shape, audio.shape, mellen.shape, audiolen.shape)
-
-# tfrecord
-record = speechset.TFRecordDataset(
-    config, 'D:\\dataset\\LJSpeech-1.1\\tfrecord\\acoustic.tfrecord', 'acoustic')
-_, dataset = record.dataset(13000)
-# unpack
-text, mel, textlen, mellen = next(iter(dataset))
-print(text.shape, mel.shape, textlen.shape, mellen.shape)
