@@ -1,4 +1,5 @@
-from typing import Any, List, Tuple
+from copy import deepcopy
+from typing import Any, List
 
 import numpy as np
 
@@ -33,6 +34,19 @@ class SpeechSet:
         """
         raise NotImplementedError('SpeechSet.collate is not implemented')
 
+    def split(self, size: int):
+        """Split dataset.
+        WARNING: safety of this method is guaranteed by `copy.deepcopy`.
+        Args:
+            size: size of the first part.
+        Returns:
+            residual dataset.
+        """
+        residual = deepcopy(self)
+        residual.dataset = residual.dataset[size:]
+        self.dataset = self.dataset[:size]
+        return residual
+
     def __getitem__(self, index: int) -> Any:
         """Lazy normalizing.
         Args:
@@ -44,3 +58,41 @@ class SpeechSet:
         text, speech = self.preproc(self.dataset[index])
         # normalize
         return self.normalize(text, speech)
+
+    def __iter__(self):
+        """Construct iterator.
+        Returns:
+            SpeechSet.Iterator, index-based iterator.
+        """
+        return SpeechSet.Iterator(self)
+
+    def __len__(self) -> int:
+        """Return length of the dataset.
+        Returns:
+            length.
+        """
+        return len(self.dataset)
+
+    class Iterator:
+        """Index-based iterator.
+        """
+        def __init__(self, speechset):
+            """Initializer.
+            Args:
+                speechset: SpeechSet, dataset.
+            """
+            self.speechset = speechset
+            self.index = 0
+        
+        def __next__(self) -> Any:
+            """Sampling.
+            Returns:
+                normalized data.
+            """
+            if self.index >= len(self.speechset):
+                raise StopIteration
+            # sampling
+            datum = self.speechset[self.index]
+            # successor
+            self.index += 1
+            return datum
