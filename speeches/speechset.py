@@ -47,7 +47,7 @@ class SpeechSet:
         self.dataset = self.dataset[:size]
         return residual
 
-    def __getitem__(self, index: Union[int, slice, List[int]]) -> Any:
+    def __getitem__(self, index: Union[int, slice]) -> Any:
         """Lazy normalizing.
         Args:
             index: input index.
