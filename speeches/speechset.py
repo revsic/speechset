@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, List
+from typing import Any, List, Union
 
 import numpy as np
 
@@ -47,7 +47,7 @@ class SpeechSet:
         self.dataset = self.dataset[:size]
         return residual
 
-    def __getitem__(self, index: int) -> Any:
+    def __getitem__(self, index: Union[int, slice, List[int]]) -> Any:
         """Lazy normalizing.
         Args:
             index: input index.
@@ -55,9 +55,13 @@ class SpeechSet:
             normalized inputs.
         """
         # reading data
-        text, speech = self.preproc(self.dataset[index])
-        # normalize
-        return self.normalize(text, speech)
+        raw = self.dataset[index]
+        if isinstance(index, int):
+            return self.normalize(*self.preproc(raw))
+        # normalize for slice
+        norm = [self.normalize(*self.preproc(single)) for single in raw]
+        # pack
+        return self.collate(norm)
 
     def __iter__(self):
         """Construct iterator.
