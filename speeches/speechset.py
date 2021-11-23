@@ -8,6 +8,12 @@ from ..datasets import DataReader
 class SpeechSet:
     """Abstraction of speech dataset.
     """
+    def __init__(self):
+        """Caching dataset and preprocessor from reader.
+        """
+        reader = self.reader()
+        self.dataset, self.preproc = reader.dataset(), reader.preproc()
+
     def reader(self) -> DataReader:
         """Get file-format data reader.
         Returns:
@@ -41,9 +47,7 @@ class SpeechSet:
         Returns:
             normalized inputs.
         """
-        reader = self.reader()
-        dataset, preproc = reader.dataset(), reader.preproc()
         # reading data
-        text, speech = preproc(dataset[index])
+        text, speech = self.preproc(self.dataset[index])
         # normalize
         return self.normalize(text, speech)
