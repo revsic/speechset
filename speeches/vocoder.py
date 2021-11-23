@@ -1,6 +1,6 @@
-from typing import Tuple
+from typing import List, Tuple
 
-import tensorflow as tf
+import numpy as np
 
 from .speechset import SpeechSet
 from ..config import Config
@@ -17,55 +17,45 @@ class VocoderDataset(SpeechSet):
             rawset: file-format datum reader.
             config: configuration.
         """
-        self.rawset = rawset
+        super().__init__(rawset)
         self.config = config
-        self.normalized = None
         self.melstft = MelSTFT(config)
-    
-    def reader(self) -> DataReader:
-        """Get file-format datum reader.
-        Returns:
-            data reader.
-        """
-        return self.rawset
-    
-    def _datum_norm(self, _: tf.Tensor, speech: tf.Tensor) \
-            -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
+
+    def normalize(self, _: str, speech: np.Tensor) \
+            -> Tuple[np.ndarray, np.ndarray]:
         """Normalize datum.
         Args:
-            _: tf.string, text placeholder.
-            speech: [tf.float32; T], speech in range (-1, 1.)
+            _: str, placeholder, transcription.
+            speech: [np.float32; [T]], speech in range (-1, 1.)
         Returns:
             normalized datum.
-                mel: [tf.float32; [T // hop + 1, mel]], mel spectrogram.
-                speech: [tf.float32; [T]], speech signal.
-                mellen: tf.int32, mel lengths.
-                speechlen: tf.int32, speech lengths.
+                mel: [np.float32; [T // hop + 1, mel]], mel spectrogram.
+                speech: [np.float32; [T]], speech signal.
         """
-        # T
-        speechlen = tf.shape(speech)[0]
         # [T // hop + 1, mel]
-        mel = tf.squeeze(self.melstft(speech[None]), axis=0)
-        # T // hop + 1
-        mellen = tf.shape(mel)[0]
-        return mel, speech, mellen, speechlen
+        return self.melstft(speech), speech
 
-    def normalize(self, rawset: tf.data.Dataset) -> tf.data.Dataset:
-        """Compose preprocessor.
+    def collate(self, bunch: List[Tuple[np.ndarray, np.ndarray]]) \
+            -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Collate bunch of datum to the batch data.
         Args:
-            rawset: raw dataset, expected format
-                text: tf.string, text.
-                speech: [tf.float32; T], speech signal in range (-1, 1).
+            bunch: B x [...] list of normalized inputs.
+                mel: [np.float32; [T // hop + 1, mel]], mel spectrogram.
+                speech: [np.float32; [T]], speech signal.
         Returns:
-            preprocessed dataset.
-                mel: [tf.float32; [B, T // hop + 1, config.mel]], mel-spectrogram.
-                speech: [tf.float32; [B, T]], speech signal.
-                mellen: [tf.int32; [B]], mel lengths.
-                speechlen: [tf.int32; [B]], speech lengths.
+            batch data.
+                mel: [np.float32; [B, T // hop + 1, mel]], mel spectrogram.
+                speech: [np.float32; [B, T]], speech signal.
+                mellen: [np.long; [B]], spectrogram lengths.
+                speechlen: [np.long; [B]], signal lengths.
         """
-        dataset = rawset.map(self._datum_norm)
-        if self.config.batch is not None:
-            dataset = dataset.padded_batch(
-                self.config.batch,
-                padded_shapes=([None, self.config.mel], [None], [], []))
-        return dataset
+        # [B], [B]
+        mellen, speechlen = np.array(
+            [[len(spec), len(signal)] for spec, signal in bunch], dtype=np.long).T
+        # [B, T, mel]
+        mel = np.stack(
+            [np.pad(spec, [[0, len(spec) - mellen.max()], [0, 0]]) for spec, _ in bunch])
+        # [B, S]
+        speech = np.stack(
+            [np.pad(signal, [0, len(signal) - speechlen.max()]) for _, signal in bunch])
+        return mel, speech, mellen, speechlen
