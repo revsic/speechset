@@ -1,10 +1,10 @@
-from typing import Callable, Iterable
+from typing import Callable, List
 
 
 class DataReader:
     """Interface of the data reader for efficient train-test split.
     """
-    def dataset(self) -> Iterable:
+    def dataset(self) -> List:
         """Return file reader.
         Returns:
             file-format datum reader, without any preprocessor for fast train-text split.
