@@ -31,7 +31,7 @@ class MelSTFT:
             self.config.hop,
             self.config.win,
             self.config.win_fn,
-            center=True, mode='reflect')
+            center=True, pad_mode='reflect')
         # [mel, T // hop + 1]
         mel = self.melfilter @ np.abs(stft)
         # [T // hop + 1, mel]
