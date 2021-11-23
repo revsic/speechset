@@ -8,18 +8,10 @@ from ..datasets import DataReader
 class SpeechSet:
     """Abstraction of speech dataset.
     """
-    def __init__(self):
+    def __init__(self, reader: DataReader):
         """Caching dataset and preprocessor from reader.
         """
-        reader = self.reader()
         self.dataset, self.preproc = reader.dataset(), reader.preproc()
-
-    def reader(self) -> DataReader:
-        """Get file-format data reader.
-        Returns:
-            data reader.
-        """
-        raise NotImplementedError('SpeechSet.reader is not implemented')
 
     def normalize(self, text: str, speech: np.ndarray) -> Any:
         """Normalizer.
