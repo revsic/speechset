@@ -81,6 +81,6 @@ class LJSpeech(DataReader):
             # str
             path = os.path.basename(path).replace('.wav', '')
             # str, [np.float32; T]
-            return table.get(path, ''), audio
+            return table.get(path, ''), audio.astype(np.float32)
 
         return load_and_lookup
