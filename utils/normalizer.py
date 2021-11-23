@@ -1,7 +1,5 @@
 from typing import List
 
-import tensorflow as tf
-
 
 class TextNormalizer:
     """Normalize text in to fixed graphme set.
@@ -67,16 +65,3 @@ class TextNormalizer:
         return ''.join(
             TextNormalizer.GRAPHEMES[i - 1] 
             for i in labels if i != 0)
-
-    def tf_labeler(self, text: tf.Tensor) -> tf.Tensor:
-        """Tensorflow level text labeler.
-        Args:
-            text: tf.string, text.
-        Returns:
-            labels: [tf.int32; S], labels.
-        """
-        def labeler(text: tf.Tensor) -> tf.Tensor:
-            text = text.numpy().decode('utf-8')
-            labels = self.labeling(text)
-            return tf.convert_to_tensor(labels, dtype=tf.int32)
-        return tf.py_function(labeler, [text], tf.int32)
