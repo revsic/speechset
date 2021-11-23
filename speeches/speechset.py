@@ -1,6 +1,6 @@
-from typing import Optional, Tuple
+from typing import Any, List, Tuple
 
-import tensorflow as tf
+import numpy as np
 
 from ..datasets import DataReader
 
@@ -15,29 +15,35 @@ class SpeechSet:
         """
         raise NotImplementedError('SpeechSet.reader is not implemented')
 
-    def normalize(self, rawset: tf.data.Dataset) -> tf.data.Dataset:
+    def normalize(self, text: str, speech: np.ndarray) -> Any:
         """Normalizer.
         Args:
-            rawset: file-format raw dataset.
+            text: transcription.
+            speech: [np.float32; [T]], mono channel audio.
         Returns:
-            normalized batch-level dataset.
+            normalized inputs.
         """
-        raise NotImplementedError('SpeechSet.preproc is not implemented')
-    
-    def dataset(self, split: Optional[int] = None) \
-            -> Tuple[tf.data.Dataset, Optional[tf.data.Dataset]]:
-        """Generate dataset.
+        raise NotImplementedError('SpeechSet.normalize is not implemented')
+
+    def collate(self, bunch: List[Any]) -> Any:
+        """Collate bunch of datum to the batch data.
         Args:
-            split: train-text split point, size of the training samples.
-                if none is given, test set would not be provided.
+            bunch: B x [], list of normalized inputs.
         Returns:
-            training, test dataset.
+            [B], batch data.
+        """
+        raise NotImplementedError('SpeechSet.collate is not implemented')
+
+    def __getitem__(self, index: int) -> Any:
+        """Lazy normalizing.
+        Args:
+            index: input index.
+        Returns:
+            normalized inputs.
         """
         reader = self.reader()
-        dataset, preprocessor = reader.dataset(), reader.preproc()
-        if split is None:
-            return self.normalize(dataset.map(preprocessor)), None
-        # split and preprocess
-        train = self.normalize(dataset.take(split).map(preprocessor))
-        test = self.normalize(dataset.skip(split).map(preprocessor))
-        return train, test
+        dataset, preproc = reader.dataset(), reader.preproc()
+        # reading data
+        text, speech = preproc(dataset[index])
+        # normalize
+        return self.normalize(text, speech)
