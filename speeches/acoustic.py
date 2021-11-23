@@ -1,6 +1,6 @@
-from typing import Optional, Tuple
+from typing import List, Tuple
 
-import tensorflow as tf
+import numpy as np
 
 from .speechset import SpeechSet
 from ..config import Config
@@ -20,58 +20,50 @@ class AcousticDataset(SpeechSet):
             rawset: file-format datum reader.
             config: configuration.
         """
-        self.rawset = rawset
+        # cache dataset and preprocessor
+        super().__init__(rawset)
         self.config = config
-        self.normalized = None
         self.melstft = MelSTFT(config)
         self.textnorm = TextNormalizer()
 
-    def reader(self) -> DataReader:
-        """Get file-format datum reader.
-        Returns:
-            data reader.
-        """
-        return self.rawset
-    
-    def _norm_datum(self, text: tf.Tensor, speech: tf.Tensor) \
-            -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
+    def normalize(self, text: str, speech: np.ndarray) \
+            -> Tuple[np.ndarray, np.ndarray]:
         """Normalize datum.
         Args:
-            text: tf.string, text.
-            speech: [tf.float32; T], speech in range (-1, 1).
+            text: transcription.
+            speech: [np.float32; [T]], speech in range (-1, 1).
         Returns:
             normalized datum.
-                labels: [tf.int32; S], labeled text sequence.
-                mel: [tf.float32; [T // hop, mel]], mel spectrogram.
-                textlen: tf.int32, text lengths.
-                mellen: tf.int32, mel lengths.
+                labels: [np.long; [S]], labeled text sequence.
+                mel: [np.float32; [T // hop, mel]], mel spectrogram.
         """
         # [S]
-        labels = self.textnorm.tf_labeler(text)
-        # S
-        textlen = tf.shape(labels)[0]
+        labels = np.array(self.textnorm.labeling(text), dtype=np.long)
         # [T // hop, mel]
-        mel = tf.squeeze(self.melstft(speech[None]), axis=0)
-        # T // hop
-        mellen = tf.shape(mel)[0]
-        return labels, mel, textlen, mellen
+        mel = self.melstft(speech)
+        return labels, mel
 
-    def normalize(self, rawset: tf.data.Dataset) -> tf.data.Dataset:
-        """Compose preprocessor.
+    def collate(self, bunch: List[Tuple[np.ndarray, np.ndarray]]) \
+            -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Collate bunch of datum to the batch data.
         Args:
-            rawset: raw dataset, expected format
-                text: tf.string, text.
-                speech: [tf.float32; T], speech signal in range (-1, 1).
+            bunch: B x [...] list of normalized inputs.
+                labels: [np.long; [Si]], labled text sequence.
+                mel: [np.float32; [Ti, mel]], mel spectrogram.
         Returns:
-            preprocessed dataset.
-                text: [tf.int32; [B, S]], labeled sequence.
-                mel: [tf.float32; [B, T // hop, config.mel]], mel-spectrogram.
-                textlen: [tf.int32; [B]], text lengths.
-                mellen: [tf.int32; [B]], mel lengths.
+            batch data.
+                text: [np.long; [B, S]], labeled text sequence.
+                mel: [np.float32; [B, T, mel]], mel spectrogram.
+                textlen: [np.long; [B]], text lengths.
+                mellen: [np.long; [B]], spectrogram lengths.
         """
-        dataset = rawset.map(self._norm_datum)
-        if self.config.batch is not None:
-            dataset = dataset.padded_batch(
-                self.config.batch,
-                padded_shapes=([None], [None, self.config.mel], [], []))
-        return dataset
+        # [B], [B]
+        textlen, mellen = np.array(
+            [[len(labels), len(spec)] for labels, spec in bunch], dtype=np.long).T
+        # [B, S]
+        text = np.stack(
+            [np.pad(labels, [0, len(labels) - textlen.max()]) for labels, _ in bunch])
+        # [B, T, mel]
+        mel = np.stack(
+            [np.pad(spec, [[0, len(spec) - mellen.max()], [0, 0]]) for _, spec in bunch])
+        return mel, text, textlen, mellen
