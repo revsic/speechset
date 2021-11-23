@@ -48,7 +48,7 @@ class LJSpeech(DataReader):
         """
         # generate file lists
         files = [
-            filename
+            os.path.join(data_dir, 'wavs', filename)
             for filename in os.listdir(os.path.join(data_dir, 'wavs'))
             if filename.endswith('.wav')]
         # read filename-text pair
