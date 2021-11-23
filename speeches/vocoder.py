@@ -21,7 +21,7 @@ class VocoderDataset(SpeechSet):
         self.config = config
         self.melstft = MelSTFT(config)
 
-    def normalize(self, _: str, speech: np.Tensor) \
+    def normalize(self, _: str, speech: np.ndarray) \
             -> Tuple[np.ndarray, np.ndarray]:
         """Normalize datum.
         Args:
@@ -54,8 +54,8 @@ class VocoderDataset(SpeechSet):
             [[len(spec), len(signal)] for spec, signal in bunch], dtype=np.long).T
         # [B, T, mel]
         mel = np.stack(
-            [np.pad(spec, [[0, len(spec) - mellen.max()], [0, 0]]) for spec, _ in bunch])
+            [np.pad(spec, [[0, mellen.max() - len(spec)], [0, 0]]) for spec, _ in bunch])
         # [B, S]
         speech = np.stack(
-            [np.pad(signal, [0, len(signal) - speechlen.max()]) for _, signal in bunch])
+            [np.pad(signal, [0, speechlen.max() - len(signal)]) for _, signal in bunch])
         return mel, speech, mellen, speechlen
