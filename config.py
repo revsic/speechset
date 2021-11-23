@@ -1,6 +1,4 @@
-from typing import Callable, Optional
-
-import tensorflow as tf
+from typing import Optional
 
 
 class Config:
@@ -31,18 +29,3 @@ class Config:
 
         # sample size
         self.batch = batch
-
-    def window_fn(self) -> Callable:
-        """Return window generator.
-        Returns:
-            window function of tf.signal
-                , which corresponds to self.win_fn.
-        """
-        mapper = {
-            'hann': tf.signal.hann_window,
-            'hamming': tf.signal.hamming_window
-        }
-        if self.win_fn in mapper:
-            return mapper[self.win_fn]
-        
-        raise ValueError('invalid window function: ' + self.win_fn)
