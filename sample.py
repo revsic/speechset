@@ -44,3 +44,16 @@ acoustic = speechset.utils.IDWrapper(
 # unpack
 sid, text, mel, textlen, mellen = acoustic[0:3]
 print(sid.shape, text.shape, mel.shape, textlen.shape, mellen.shape)
+
+# dump
+DUMP_PATH = 'D:\\dataset\\LibriTTS\\test-clean-dump'
+speechset.utils.mp_dump(acoustic, DUMP_PATH, 4)
+
+# load dump
+dumped = speechset.utils.DumpDataset(
+    speechset.AcousticDataset, DUMP_PATH)
+
+# unpack
+sid, text, mel, textlen, mellen = acoustic[0:3]
+print(sid.shape, text.shape, mel.shape, textlen.shape, mellen.shape)
+
