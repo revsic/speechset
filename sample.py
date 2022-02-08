@@ -33,3 +33,14 @@ vocoder = speechset.VocoderDataset(lj, config)
 # unpack
 mel, audio, mellen, audiolen = vocoder[0:3]
 print(mel.shape, audio.shape, mellen.shape, audiolen.shape)
+
+# speaker id support
+libri = speechset.datasets.LibriTTS('D:\\dataset\\LibriTTS\\test-clean')
+
+# construct multi speaker
+acoustic = speechset.utils.IDWrapper(
+    speechset.AcousticDataset(libri, config))
+
+# unpack
+sid, text, mel, textlen, mellen = acoustic[0:3]
+print(sid.shape, text.shape, mel.shape, textlen.shape, mellen.shape)
