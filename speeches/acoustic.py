@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -13,17 +13,21 @@ class AcousticDataset(SpeechSet):
     """
     VOCABS = len(TextNormalizer.GRAPHEMES) + 1
 
-    def __init__(self, rawset: DataReader, config: Config):
+    def __init__(self,
+                 rawset: DataReader,
+                 config: Config,
+                 report_level: Optional[int] = None):
         """Initializer.
         Args:
             rawset: file-format datum reader.
             config: configuration.
+            report_level: text normalizing error report level.
         """
         # cache dataset and preprocessor
         super().__init__(rawset)
         self.config = config
         self.melstft = MelSTFT(config)
-        self.textnorm = TextNormalizer()
+        self.textnorm = TextNormalizer(report_level)
 
     def normalize(self, text: str, speech: np.ndarray) \
             -> Tuple[np.ndarray, np.ndarray]:
