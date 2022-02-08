@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import librosa
 import numpy as np
