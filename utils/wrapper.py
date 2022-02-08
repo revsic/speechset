@@ -50,7 +50,7 @@ class IDWrapper(SpeechSet):
         # [B, ...], auxiliary ids.
         ids = self.collate_id([ids for ids, _ in bunch])
         # collated bunch
-        return ids, *self.speechset.collate([datum for _, datum in bunch])
+        return (ids, *self.speechset.collate([datum for _, datum in bunch]))
 
     def collate_id(self, bunch: List[Union[int, List[int]]]) -> np.ndarray:
         """ID collator.
