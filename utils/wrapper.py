@@ -11,11 +11,10 @@ class IDWrapper(SpeechSet):
     def __init__(self, speechset: SpeechSet):
         """Initializer.
         Args:
-            rawset: file-format datum reader.
-            config: configuration.
+            speechset: base speechset.
         """
-        # cache dataset and preprocessor
-        super().__init__(speechset.reader)
+        # do not run higher initializer since dataset and preprocessor already cached
+        self.dataset, self.preproc = speechset.dataset, speechset.preproc
         # hold
         self.speechset = speechset
 
