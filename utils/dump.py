@@ -59,7 +59,7 @@ class DumpDataset(SpeechSet):
             data_dir: path to the dumped dataset.
         """
         # use dummy config
-        self.speechset = settype(DataReader(data_dir), Config())
+        self.speechset = settype(DumpReader(data_dir), Config())
         # cache
         self.dataset, self.preproc = self.speechset.dataset, self.speechset.preproc
 
