@@ -43,7 +43,7 @@ class DumpReader(DataReader):
             Returns:
                 loaded.
             """
-            return np.load(path, allow_pickle=True).item()
+            return np.load(path, allow_pickle=True)
 
         return preprocessor
 
