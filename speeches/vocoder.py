@@ -4,8 +4,8 @@ import numpy as np
 
 from .speechset import SpeechSet
 from ..config import Config
-from ..datasets.reader import DataReader
-from ..utils.melstft import MelSTFT
+from ..datasets import DataReader
+from ..utils import MelSTFT
 
 
 class VocoderDataset(SpeechSet):

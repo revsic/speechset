@@ -4,9 +4,8 @@ import numpy as np
 
 from .speechset import SpeechSet
 from ..config import Config
-from ..datasets.reader import DataReader
-from ..utils.melstft import MelSTFT
-from ..utils.normalizer import TextNormalizer
+from ..datasets import DataReader
+from ..utils import MelSTFT, TextNormalizer
 
 
 class AcousticDataset(SpeechSet):
