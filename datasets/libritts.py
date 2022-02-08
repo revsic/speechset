@@ -47,7 +47,7 @@ class LibriTTS(DataReader):
         return len(os.listdir(data_dir))
 
     def load_data(self, data_dir: str) -> Tuple[List[str], Callable]:
-        """Load audio with tf apis.
+        """Load audio.
         Args:
             data_dir: dataset directory.
         Returns:
