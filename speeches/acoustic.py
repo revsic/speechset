@@ -69,4 +69,4 @@ class AcousticDataset(SpeechSet):
         # [B, T, mel]
         mel = np.stack(
             [np.pad(spec, [[0, mellen.max() - len(spec)], [0, 0]]) for _, spec in bunch])
-        return mel, text, textlen, mellen
+        return text, mel, textlen, mellen
