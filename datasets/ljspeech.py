@@ -19,14 +19,14 @@ class LJSpeech(DataReader):
         Args:
             data_dir: dataset directory.
         """
-        self.rawset, self.preprocessor = self.load_data(data_dir)
+        self.filelist, self.transcript = self.load_data(data_dir)
 
     def dataset(self) -> List[str]:
         """Return file reader.
         Returns:
             file-format datum reader.
         """
-        return self.rawset
+        return self.filelist
     
     def preproc(self) -> Callable:
         """Return data preprocessor.
@@ -58,29 +58,20 @@ class LJSpeech(DataReader):
                 name, _, normalized = row.replace('\n', '').split('|')
                 table[name] = normalized
         # read audio
-        return files, self._preproc_audio(table)
+        return files, table
 
-    def _preproc_audio(self, table: Dict[str, str]) -> Callable:
-        """Generate audio loader.
+    def preprocessor(self, path: str) -> Tuple[str, np.ndarray]:
+        """Load audio and lookup text.
         Args:
-            table: lookup table from filename to text.
+            path: str, path
         Returns:
-            function from audio path to speech signal and text.
+            tuple,
+                text: str, text.
+                audio: [np.float32; T], raw speech signal in range(-1, 1).
         """
-        def load_and_lookup(path: str) -> Tuple[str, np.ndarray]:
-            """Load audio and lookup text.
-            Args:
-                path: str, path
-            Returns:
-                tuple,
-                    text: str, text.
-                    audio: [np.float32; T], raw speech signal in range(-1, 1).
-            """
-            # [T]
-            audio, _ = librosa.load(path, sr=LJSpeech.SR)
-            # str
-            path = os.path.basename(path).replace('.wav', '')
-            # str, [np.float32; T]
-            return table.get(path, ''), audio.astype(np.float32)
-
-        return load_and_lookup
+        # [T]
+        audio, _ = librosa.load(path, sr=LJSpeech.SR)
+        # str
+        path = os.path.basename(path).replace('.wav', '')
+        # str, [np.float32; T]
+        return self.transcript.get(path, ''), audio.astype(np.float32)
