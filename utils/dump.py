@@ -87,12 +87,16 @@ def dumper(speechset: SpeechSet, outdir: str, i: int) -> int:
     return i
 
 
-def mp_dump(speechset: SpeechSet, outdir: str, num_proc: int) -> int:
+def mp_dump(speechset: SpeechSet,
+            outdir: str,
+            num_proc: int,
+            chunksize: int = 1) -> int:
     """Dump dataset.
     Args:
         speechset: target dataset.
         outdir: path to the output directory.
         num_proc: the number of the process for multiprocessing.
+        chunksize: size of the imap_ordered chunk.
     Returns:
         the number of the written data.
     """
@@ -101,7 +105,8 @@ def mp_dump(speechset: SpeechSet, outdir: str, num_proc: int) -> int:
 
     length = len(speechset)
     with mp.Pool(num_proc) as pool:
-        for _ in tqdm(pool.imap_unordered(partial, range(length)), total=length):
+        worker = pool.imap_unordered(partial, range(length), chunksize=chunksize)
+        for _ in tqdm(worker, total=length):
             pass
 
     return length
