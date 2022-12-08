@@ -20,9 +20,9 @@ class DataReader:
         """
         raise NotImplementedError('DataReader.preproc is not implemented')
 
-    def count_speakers(self) -> int:
-        """Count the number of speakers.
+    def speakers(self) -> List[str]:
+        """Return list of speakers.
         Returns:
-            the number of the speakers.
+            list of the speakers.
         """
-        raise NotImplementedError('DataReader.count_speakers is not implemented')
+        raise NotImplementedError('DataReader.speakers is not implemented')
