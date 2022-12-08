@@ -45,6 +45,17 @@ acoustic = speechset.utils.IDWrapper(
 sid, text, mel, textlen, mellen = acoustic[0:3]
 print(sid.shape, text.shape, mel.shape, textlen.shape, mellen.shape)
 
+# construct concatenated reader
+concat = speechset.datasets.ConcatReader([libri, libri])
+print(len(concat.speakers()))
+
+# construct wav model
+wavset = speechset.utils.IDWrapper(speechset.WavDataset(concat))
+
+# unpack
+sid, speeches = wavset[0]
+print(sid, speeches.shape)
+
 # dump
 DUMP_PATH = 'D:\\dataset\\LibriTTS\\test-clean-dump'
 speechset.utils.mp_dump(acoustic, DUMP_PATH, 4)
