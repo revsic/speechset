@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import librosa
 import numpy as np
@@ -12,13 +12,14 @@ class LJSpeech(DataReader):
     Use other opensource vocoder settings, 16bit, sr: 22050.
     """
     SR = 22050
-    MAXVAL = 32767.
 
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: str, sr: Optional[int] = None):
         """Initializer.
         Args:
             data_dir: dataset directory.
+            sr: sampling rate.
         """
+        self.sr = sr or LJSpeech.SR
         self.filelist, self.transcript = self.load_data(data_dir)
 
     def dataset(self) -> List[str]:
@@ -70,7 +71,7 @@ class LJSpeech(DataReader):
                 audio: [np.float32; T], raw speech signal in range(-1, 1).
         """
         # [T]
-        audio, _ = librosa.load(path, sr=LJSpeech.SR)
+        audio, _ = librosa.load(path, sr=self.sr)
         # str
         path = os.path.basename(path).replace('.wav', '')
         # str, [np.float32; T]
