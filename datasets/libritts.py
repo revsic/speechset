@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import librosa
 import numpy as np
@@ -9,16 +9,18 @@ from .reader import DataReader
 
 class LibriTTS(DataReader):
     """LibriTTS dataset loader.
-    Use other opensource settings, 16bit, sr: 22050 (originally 24khz).
+    Use other opensource settings, 16bit, sr: 24khz.
     """
-    SR = 22050
+    SR = 24000
 
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: str, sr: Optional[int] = None):
         """Initializer.
         Args:
             data_dir: dataset directory.
+            sr: sampling rate.
         """
-        self.filelist, self.transcript = self.load_data(data_dir)
+        self.sr = sr or LibriTTS.SR
+        self.speakers, self.filelist, self.transcript = self.load_data(data_dir)
 
     def dataset(self) -> List[str]:
         """Return file reader.
@@ -51,18 +53,16 @@ class LibriTTS(DataReader):
         Args:
             data_dir: dataset directory.
         Returns:
-            data loader.
-                sid: int, speaker id.
-                text: str, text.
-                speech: [np.float32; T], speech signal in range (-1, 1).
+            list of speakers, file paths and transcripts.
         """
         # generate file lists
         paths, trans = [], {}
-        for sid, speakers in enumerate(os.listdir(data_dir)):
-            for chapters in os.listdir(os.path.join(data_dir, speakers)):
-                path = os.path.join(data_dir, speakers, chapters)
+        speakers = os.listdir(data_dir)
+        for sid, speaker in enumerate(speakers):
+            for chapter in os.listdir(os.path.join(data_dir, speaker)):
+                path = os.path.join(data_dir, speaker, chapter)
                 # read transcription
-                with open(os.path.join(path, f'{speakers}_{chapters}.trans.tsv')) as f:
+                with open(os.path.join(path, f'{speaker}_{chapter}.trans.tsv')) as f:
                     for row in f.readlines():
                         filename, _, normalized = row.replace('\n', '').split('\t')
                         trans[filename] = (sid, normalized)
@@ -71,7 +71,7 @@ class LibriTTS(DataReader):
                     os.path.join(path, filename)
                     for filename in os.listdir(path) if filename.endswith('.wav')])
         # read audio
-        return paths, trans
+        return speakers, paths, trans
 
     def preprocessor(self, path: str) -> Tuple[int, str, np.ndarray]:
         """Load audio and lookup text.
@@ -84,7 +84,7 @@ class LibriTTS(DataReader):
                 audio: [np.float32; T], raw speech signal in range(-1, 1).
         """
         # [T]
-        audio, _ = librosa.load(path, sr=LibriTTS.SR)
+        audio, _ = librosa.load(path, sr=self.sr)
         # str
         path = os.path.basename(path).replace('.wav', '')
         # int, str
