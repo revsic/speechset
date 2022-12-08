@@ -20,7 +20,7 @@ class VCTK(DataReader):
             sr: sampling rate.
         """
         self.sr = sr or VCTK.SR
-        self.speakers, self.filelist, self.transcript = self.load_data(data_dir)
+        self.speakers_, self.filelist, self.transcript = self.load_data(data_dir)
 
     def dataset(self) -> List[str]:
         """Return file reader.
@@ -38,12 +38,12 @@ class VCTK(DataReader):
         """
         return self.preprocessor
 
-    def count_speakers(self) -> int:
-        """Count the number of speakers.
+    def speakers(self) -> List[str]:
+        """Return list of speakers.
         Returns:
-            the number of the speakers.
+            list of the speakers.
         """
-        return len(self.speakers)
+        return self.speakers_
 
     def load_data(self, data_dir: str) -> Tuple[List[str], List[str], Dict[str, Tuple[int, str]]]:
         """Load audio.

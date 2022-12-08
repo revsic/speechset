@@ -38,6 +38,13 @@ class LJSpeech(DataReader):
         """
         return self.preprocessor
 
+    def speakers(self) -> List[str]:
+        """List of speakers.
+        Returns:
+            list of the speakers.
+        """
+        return ['ljspeech']
+
     def load_data(self, data_dir: str) -> Tuple[List[str], Callable]:
         """Load audio with tf apis.
         Args:
