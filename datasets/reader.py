@@ -15,6 +15,7 @@ class DataReader:
         """Return data preprocessor.
         Returns:
             preprocessor, required format,
+                (optional) sid: int, speaker id.
                 text: str, text.
                 speech: [np.float32; T], speech signal in range (-1, 1).
         """
