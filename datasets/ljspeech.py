@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import librosa
 import numpy as np
@@ -45,14 +45,12 @@ class LJSpeech(DataReader):
         """
         return ['ljspeech']
 
-    def load_data(self, data_dir: str) -> Tuple[List[str], Callable]:
+    def load_data(self, data_dir: str) -> Tuple[List[str], Dict[str, str]]:
         """Load audio with tf apis.
         Args:
             data_dir: dataset directory.
         Returns:
-            data loader.
-                text: str, text.
-                speech: [np.float32; T], speech signal in range (-1, 1).
+            list of audio files and transcript table.
         """
         # generate file lists
         files = [

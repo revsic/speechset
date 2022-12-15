@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import librosa
 import numpy as np
@@ -33,6 +33,7 @@ class LibriTTS(DataReader):
         """Return data preprocessor.
         Returns:
             preprocessor, expected format 
+                sid: int, speaker id.
                 text: str, text.
                 speech: [np.float32; T], speech signal in range (-1, 1).
         """
@@ -45,7 +46,8 @@ class LibriTTS(DataReader):
         """
         return self.speakers_
 
-    def load_data(self, data_dir: str) -> Tuple[List[str], Callable]:
+    def load_data(self, data_dir: str) \
+            -> Tuple[List[str], List[str], Dict[str, Tuple[int, str]]]:
         """Load audio.
         Args:
             data_dir: dataset directory.
