@@ -60,6 +60,15 @@ class ConcatReader(DataReader):
         """
         assert path in self.mapper
         preproc, start = self.mapper[path]
-        sid, text, audio = preproc(path)
+        
+        outputs = preproc(path)
+        assert len(outputs) in [2, 3]
+        # without sid
+        if len(outputs) == 2:
+            sid = 0
+            text, audio = outputs
+        else:
+            # with sid
+            sid, text, audio = preproc(path)
         # callibrate speaker id
         return start + sid, text, audio
