@@ -7,11 +7,11 @@ import numpy as np
 from .reader import DataReader
 
 
-class LibriTTS(DataReader):
-    """LibriTTS dataset loader.
-    Use other opensource settings, 16bit, sr: 24khz.
+class LibriSpeech(DataReader):
+    """LibriSpeech dataset loader.
+    Use other opensource settings, 16bit, sr: 16khz.
     """
-    SR = 24000
+    SR = 16000
 
     def __init__(self, data_dir: str, sr: Optional[int] = None):
         """Initializer.
@@ -19,7 +19,7 @@ class LibriTTS(DataReader):
             data_dir: dataset directory.
             sr: sampling rate.
         """
-        self.sr = sr or LibriTTS.SR
+        self.sr = sr or LibriSpeech.SR
         self.speakers_, self.filelist, self.transcript = self.load_data(data_dir)
 
     def dataset(self) -> List[str]:
@@ -28,7 +28,7 @@ class LibriTTS(DataReader):
             file-format datum reader.
         """
         return self.filelist
-    
+
     def preproc(self) -> Callable:
         """Return data preprocessor.
         Returns:
@@ -46,13 +46,12 @@ class LibriTTS(DataReader):
         """
         return self.speakers_
 
-    def load_data(self, data_dir: str) \
-            -> Tuple[List[str], List[str], Dict[str, Tuple[int, str]]]:
+    def load_data(self, data_dir: str) -> Tuple[List[str], List[str], Dict[str, Tuple[int, str]]]:
         """Load audio.
         Args:
             data_dir: dataset directory.
         Returns:
-            list of speakers, file paths and transcripts.
+            loaded data, speaker list, file paths and transcripts.
         """
         # generate file lists
         paths, trans = [], {}
@@ -61,14 +60,16 @@ class LibriTTS(DataReader):
             for chapter in os.listdir(os.path.join(data_dir, speaker)):
                 path = os.path.join(data_dir, speaker, chapter)
                 # read transcription
-                with open(os.path.join(path, f'{speaker}_{chapter}.trans.tsv')) as f:
+                with open(os.path.join(path, f'{speaker}-{chapter}.trans.txt')) as f:
                     for row in f.readlines():
-                        filename, _, normalized = row.replace('\n', '').split('\t')
-                        trans[filename] = (sid, normalized)
+                        filename, *text = row.replace('\n', '').split(' ')
+                        # re-aggregation
+                        text = ' '.join(text).strip()
+                        trans[filename] = (sid, text)
                 # wav files
                 paths.extend([
                     os.path.join(path, filename)
-                    for filename in os.listdir(path) if filename.endswith('.wav')])
+                    for filename in os.listdir(path) if filename.endswith('.flac')])
         # read audio
         return speakers, paths, trans
 
@@ -85,7 +86,7 @@ class LibriTTS(DataReader):
         # [T]
         audio, _ = librosa.load(path, sr=self.sr)
         # str
-        path = os.path.basename(path).replace('.wav', '')
+        path = os.path.basename(path).replace('.flac', '')
         # int, str
         sid, text = self.transcript.get(path, (-1, ''))
         # int, str, [np.float32; T]
