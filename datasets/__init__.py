@@ -1,3 +1,4 @@
+from .librispeech import LibriSpeech
 from .libritts import LibriTTS
 from .ljspeech import LJSpeech
 from .vctk import VCTK
