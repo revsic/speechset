@@ -6,10 +6,10 @@ from typing import Callable, Dict, List, Optional, Tuple
 import numpy as np
 from tqdm import tqdm
 
-import speechset
+from .. import datasets
 
 
-class DumpReader(speechset.datasets.DataReader):
+class DumpReader(datasets.DataReader):
     """Dumped loader
     """
     def __init__(self, data_dir: str):
@@ -107,7 +107,7 @@ class DumpReader(speechset.datasets.DataReader):
 
     @classmethod
     def dump(cls,
-             reader: speechset.datasets.DataReader,
+             reader: datasets.DataReader,
              out_dir: str,
              default_sid: int = -1,
              num_proc: Optional[int] = None,
@@ -173,11 +173,11 @@ if __name__ == '__main__':
         args = parser.parse_args()
 
         # hard code the reader
-        reader = speechset.datasets.ConcatReader([
-            speechset.datasets.LibriTTS('./datasets/LibriTTS/train-clean-100', args.sr),
-            speechset.datasets.LibriTTS('./datasets/LibriTTS/train-clean-360', args.sr),
-            speechset.datasets.LibriSpeech('./datasets/LibriSpeech/train-other-500', args.sr),
-            speechset.datasets.VCTK('./datasets/VCTK-Corpus', args.sr)])
+        reader = datasets.ConcatReader([
+            datasets.LibriTTS('./datasets/LibriTTS/train-clean-100', args.sr),
+            datasets.LibriTTS('./datasets/LibriTTS/train-clean-360', args.sr),
+            datasets.LibriSpeech('./datasets/LibriSpeech/train-other-500', args.sr),
+            datasets.VCTK('./datasets/VCTK-Corpus', args.sr)])
 
         DumpReader.dump(
             reader,
