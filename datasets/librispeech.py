@@ -84,10 +84,10 @@ class LibriSpeech(DataReader):
                 audio: [np.float32; T], raw speech signal in range(-1, 1).
         """
         # [T]
-        audio, _ = librosa.load(path, sr=self.sr)
+        audio = self.load_audio(path, self.sr)
         # str
         path = os.path.basename(path).replace('.flac', '')
         # int, str
         sid, text = self.transcript.get(path, (-1, ''))
         # int, str, [np.float32; T]
-        return sid, text, audio.astype(np.float32)
+        return sid, text, audio

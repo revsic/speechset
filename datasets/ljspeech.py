@@ -76,8 +76,8 @@ class LJSpeech(DataReader):
                 audio: [np.float32; T], raw speech signal in range(-1, 1).
         """
         # [T]
-        audio, _ = librosa.load(path, sr=self.sr)
+        audio = self.load_audio(path, self.sr)
         # str
         path = os.path.basename(path).replace('.wav', '')
         # str, [np.float32; T]
-        return self.transcript.get(path, ''), audio.astype(np.float32)
+        return self.transcript.get(path, ''), audio

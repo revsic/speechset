@@ -1,9 +1,23 @@
 from typing import Callable, List
 
+import librosa
+import numpy as np
+
 
 class DataReader:
     """Interface of the data reader for efficient train-test split.
     """
+    def load_audio(self, path: str, sr: int) -> np.ndarray:
+        """Read the audio.
+        Args:
+            path: path to the audio.
+            sr: sampling rate.
+        Returns:
+            [np.float32; [T]], audio signal, [-1, 1]-ranged.
+        """
+        audio, _ = librosa.load(path, sr=sr)
+        return audio.astype(np.float32)
+
     def dataset(self) -> List:
         """Return file reader.
         Returns:
