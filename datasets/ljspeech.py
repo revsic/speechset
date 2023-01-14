@@ -46,6 +46,6 @@ class LJSpeech(DataReader):
             for row in f.readlines():
                 name, _, normalized = row.replace('\n', '').split('|')
                 path = os.path.join(data_dir, 'wavs', f'{name}.wav')
-                table[path] = normalized
+                table[path] = (0, normalized)
         # read audio
         return table
