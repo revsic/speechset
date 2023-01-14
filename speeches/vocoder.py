@@ -21,11 +21,12 @@ class VocoderDataset(SpeechSet):
         self.config = config
         self.melstft = MelSTFT(config)
 
-    def normalize(self, _: str, speech: np.ndarray) \
+    def normalize(self, sid: int, text: str, speech: np.ndarray) \
             -> Tuple[np.ndarray, np.ndarray]:
         """Normalize datum.
         Args:
-            _: str, placeholder, transcription.
+            sid: speaker id.
+            text: transcription.
             speech: [np.float32; [T]], speech in range (-1, 1.)
         Returns:
             normalized datum.

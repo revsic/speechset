@@ -16,9 +16,10 @@ class SpeechSet:
         self.dataset, self.preproc = reader.dataset(), reader.preproc()
         self.indexer = list(self.dataset.keys())
 
-    def normalize(self, text: str, speech: np.ndarray) -> Any:
+    def normalize(self, sid: int, text: str, speech: np.ndarray) -> Any:
         """Normalizer.
         Args:
+            sid: speaker id.
             text: transcription.
             speech: [np.float32; [T]], mono channel audio.
         Returns:

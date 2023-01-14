@@ -29,7 +29,7 @@ class AcousticDataset(SpeechSet):
         self.melstft = MelSTFT(config)
         self.textnorm = TextNormalizer(report_level)
 
-    def normalize(self, text: str, speech: np.ndarray) \
+    def normalize(self, _: int, text: str, speech: np.ndarray) \
             -> Tuple[np.ndarray, np.ndarray]:
         """Normalize datum.
         Args:

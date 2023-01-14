@@ -8,10 +8,11 @@ from .speechset import SpeechSet
 class WavDataset(SpeechSet):
     """Waveform only dataset.
     """
-    def normalize(self, _: str, speech: np.ndarray) -> np.ndarray:
+    def normalize(self, sid: int, text: str, speech: np.ndarray) -> np.ndarray:
         """Normalize datum.
         Args:
-            _: transcription.
+            sid: speaker id.
+            text: transcription.
             speech: [np.float32; [T]], speech in range [-1, 1].
         Returns:
             speech only.
