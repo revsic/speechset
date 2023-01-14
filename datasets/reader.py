@@ -25,6 +25,13 @@ class DataReader:
         """
         raise NotImplementedError('DataReader.rawset is not implemented')
 
+    def speakers(self) -> List[str]:
+        """Return list of speakers.
+        Returns:
+            list of the speakers.
+        """
+        raise NotImplementedError('DataReader.speakers is not implemented')
+
     def preproc(self) -> Callable:
         """Return data preprocessor.
         Returns:
@@ -33,11 +40,22 @@ class DataReader:
                 text: str, text.
                 speech: [np.float32; T], speech signal in range (-1, 1).
         """
-        raise NotImplementedError('DataReader.preproc is not implemented')
+        raise self._preproc_template
 
-    def speakers(self) -> List[str]:
-        """Return list of speakers.
+    def _preproc_template(self, path: str) -> Tuple[int, str, np.ndarray]:
+        """Load audio and lookup text.
+        Args:
+            path: str, path
         Returns:
-            list of the speakers.
+            tuple,
+                sid: int, speaker id.
+                text: str, text.
+                audio: [np.float32; T], raw speech signal in range(-1, 1).
         """
-        raise NotImplementedError('DataReader.speakers is not implemented')
+        trans = self.dataset()
+        # [T]
+        audio = self.load_audio(path, self.sr)
+        # int, str
+        sid, text = trans.get(path, (-1, ''))
+        # int, str, [np.float32; T]
+        return sid, text, audio
