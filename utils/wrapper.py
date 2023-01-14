@@ -13,10 +13,11 @@ class IDWrapper(SpeechSet):
         Args:
             speechset: base speechset.
         """
-        # do not run higher initializer since dataset and preprocessor already cached
-        self.dataset, self.preproc = speechset.dataset, speechset.preproc
         # hold
         self.speechset = speechset
+        self.reader = speechset.reader
+        # do not run higher initializer since dataset and preprocessor already cached
+        self.dataset, self.preproc = speechset.dataset, speechset.preproc
 
     def normalize(self,
                   ids: Union[int, List[int]],
