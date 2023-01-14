@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, Dict, List, Tuple
 
 import librosa
 import numpy as np
@@ -18,7 +18,7 @@ class DataReader:
         audio, _ = librosa.load(path, sr=sr)
         return audio.astype(np.float32)
 
-    def dataset(self) -> List:
+    def dataset(self) -> Dict[str, Tuple[int, str]]:
         """Return file reader.
         Returns:
             file-format datum reader, without any preprocessor for fast train-text split.
