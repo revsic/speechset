@@ -1,6 +1,7 @@
 from typing import Callable, List, Tuple
 
 import numpy as np
+from tqdm import tqdm
 
 from .reader import DataReader
 
@@ -19,8 +20,8 @@ class ConcatReader(DataReader):
         indices = np.cumsum([0] + [len(speakers) for speakers in self.speakers_])
         self.mapper = {
             path: (reader.preproc(), start)
-            for reader, start in zip(self.readers, indices)
-            for path in reader.dataset()}
+            for reader, start in zip(tqdm(self.readers, desc='concat'), indices)
+            for path in tqdm(reader.dataset(), leave=False)}
 
     def dataset(self) -> List[str]:
         """Return file reader.
