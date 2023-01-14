@@ -18,22 +18,15 @@ class DumpReader(datasets.DataReader):
             data_dir: path to the mother directory.
         """
         self.data_dir = data_dir
-        self.speakers_, self.filelist, self.transcript = self.load_data(data_dir)
+        self.speakers_, self.transcript = self.load_data(data_dir)
 
-    def dataset(self) -> List[str]:
+    def dataset(self) -> Dict[str, Tuple[int, str]]:
         """Return file reader.
         Returns:
             file-format datum read.er
         """
-        return self.filelist
+        return self.transcript
     
-    def preproc(self) -> Callable:
-        """Return data preprocessor.
-        Returns:
-            preprocessor.
-        """
-        return self.preprocessor
-
     def speakers(self) -> List[str]:
         """List of speakers.
         Returns:
@@ -41,7 +34,14 @@ class DumpReader(datasets.DataReader):
         """
         return self.speakers_
 
-    def load_data(self, data_dir: str) -> Tuple[List[str], List[str], Dict[str, Tuple[int, str]]]:
+    def preproc(self) -> Callable:
+        """Return data preprocessor.
+        Returns:
+            preprocessor.
+        """
+        return self.preprocessor
+
+    def load_data(self, data_dir: str) -> Tuple[List[str], Dict[str, Tuple[int, str]]]:
         """Load the file lists.
         Args:
             data_dir: path to the mother directory.
@@ -53,18 +53,15 @@ class DumpReader(datasets.DataReader):
             meta = json.load(f)
 
         speakers = [info['name'] for info in meta.values()]
-        filelists = [
-            os.path.join(data_dir, INTER, filename)
-            for filename in os.listdir(os.path.join(data_dir, INTER))
-            if filename.endswith('.npy')]
         # transpose
         transcripts = {}
         for sid, info in meta.items():
             sid = int(sid)
             for (i, text, _) in info['lists']:
-                transcripts[str(i)] = (sid, text)
-        
-        return speakers, filelists, transcripts
+                path = os.path.join(data_dir, INTER, f'{i}.npy')
+                transcripts[path] = (sid, text)
+
+        return speakers, transcripts
 
     def preprocessor(self, path: str) -> Tuple[int, str, np.ndarray]:
         """Load dumped.
@@ -86,20 +83,14 @@ class DumpReader(datasets.DataReader):
             path: str, path to the original datum.
             preproc: Callable, preprocessor.
             out_dir: path to the output directory.
-            default_sid: default speaker id.
         Returns:
             i: index of the datasets.
             sid: speaker id.
             text: transcript.
             path: path to the original datum.
         """
-        i, path, preproc, out_dir, default_sid = args
+        i, path, preproc, out_dir = args
         outputs = preproc(path)
-        assert len(outputs) in [2, 3]
-        if len(outputs) == 2:
-            text, audio = outputs
-            outputs = default_sid, text, audio
-
         np.save(os.path.join(out_dir, f'{i}.npy'), outputs)
 
         sid, text, _ = outputs
@@ -132,14 +123,6 @@ class DumpReader(datasets.DataReader):
         if num_proc is None:
             for i, path in enumerate(tqdm(dataset)):
                 outputs = preproc(path)
-                assert len(outputs) in [2, 3]
-                if len(outputs) == 2:
-                    text, audio = outputs
-                    outputs = default_sid, text, audio
-                    # lazy init
-                    if default_sid not in meta:
-                        meta[default_sid] = {'name': 'unknown', 'lists': []}
-
                 np.save(os.path.join(out_dir, INTER, f'{i}.npy'), outputs)
 
                 sid, text, _ = outputs
@@ -149,12 +132,10 @@ class DumpReader(datasets.DataReader):
                 worker = pool.imap_unordered(
                     DumpReader.dumper,
                     [
-                        (i, path, preproc, os.path.join(out_dir, INTER), default_sid)
+                        (i, path, preproc, os.path.join(out_dir, INTER))
                         for i, path in enumerate(dataset)],
                     chunksize=chunksize)
                 for i, sid, text, path in tqdm(worker, total=len(dataset)):
-                    if sid == default_sid and default_sid not in meta:
-                        meta[default_sid] = {'name': 'unknown', 'lists': []}
                     meta[sid]['lists'].append((i, text, path))
 
         with open(os.path.join(out_dir, 'meta.json'), 'w') as f:

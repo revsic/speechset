@@ -14,6 +14,7 @@ class SpeechSet:
         """
         self.reader = reader
         self.dataset, self.preproc = reader.dataset(), reader.preproc()
+        self.indexer = list(self.dataset.keys())
 
     def normalize(self, text: str, speech: np.ndarray) -> Any:
         """Normalizer.
@@ -43,8 +44,8 @@ class SpeechSet:
             residual dataset.
         """
         residual = deepcopy(self)
-        residual.dataset = residual.dataset[size:]
-        self.dataset = self.dataset[:size]
+        residual.indexer = residual.indexer[size:]
+        self.indexer = self.indexer[:size]
         return residual
 
     def __getitem__(self, index: Union[int, slice]) -> Any:
@@ -55,7 +56,7 @@ class SpeechSet:
             normalized inputs.
         """
         # reading data
-        raw = self.dataset[index]
+        raw = self.indexer[index]
         if isinstance(index, int):
             return self.normalize(*self.preproc(raw))
         # normalize for slice
@@ -75,7 +76,7 @@ class SpeechSet:
         Returns:
             length.
         """
-        return len(self.dataset)
+        return len(self.indexer)
 
     class Iterator:
         """Index-based iterator.
