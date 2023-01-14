@@ -40,7 +40,7 @@ class DataReader:
                 text: str, text.
                 speech: [np.float32; T], speech signal in range (-1, 1).
         """
-        raise self._preproc_template
+        return self._preproc_template
 
     def _preproc_template(self, path: str) -> Tuple[int, str, np.ndarray]:
         """Load audio and lookup text.
