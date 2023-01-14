@@ -1,4 +1,4 @@
-from typing import Callable, List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 from tqdm import tqdm
@@ -18,17 +18,31 @@ class ConcatReader(DataReader):
         self.speakers_ = [reader.speakers() for reader in readers]
         # compute starting indices
         indices = np.cumsum([0] + [len(speakers) for speakers in self.speakers_])
-        self.mapper = {
-            path: (reader.preproc(), start)
+        self.transcript = {
+            path: (sid + start, transcript)
             for reader, start in zip(tqdm(self.readers, desc='concat'), indices)
-            for path in tqdm(reader.dataset(), leave=False)}
+            for path, (sid, transcript) in tqdm(reader.dataset().items(), leave=False)}
+        # caching processor
+        self.mapper = {
+            path: reader.preproc()
+            for reader in self.readers
+            for path in reader.dataset()}
 
-    def dataset(self) -> List[str]:
+    def dataset(self) -> Dict[str, Tuple[int, str]]:
         """Return file reader.
         Returns:
             file-format datum reader.
         """
-        return list(self.mapper.keys())
+        return self.transcript
+
+    def speakers(self) -> List[str]:
+        """Return list of speakers.
+        Returns:
+            list of the speakers.
+        """
+        return [name
+            for speakers in self.speakers_
+            for name in speakers]
 
     def preproc(self) -> Callable:
         """Return the preprocessor.
@@ -39,15 +53,6 @@ class ConcatReader(DataReader):
                 audio: [np.float32; [T]], raw speech signal in range(-1, 1).
         """
         return self.preprocessor
-    
-    def speakers(self) -> List[str]:
-        """Return list of speakers.
-        Returns:
-            list of the speakers.
-        """
-        return [name
-            for speakers in self.speakers_
-            for name in speakers]
 
     def preprocessor(self, path: str) -> Tuple[int, str, np.ndarray]:
         """Load audio and lookup text.
@@ -59,17 +64,8 @@ class ConcatReader(DataReader):
                 text: str, text.
                 audio: [np.float32; T], raw speech signal in range(-1, 1).
         """
-        assert path in self.mapper
-        preproc, start = self.mapper[path]
-        
-        outputs = preproc(path)
-        assert len(outputs) in [2, 3]
-        # without sid
-        if len(outputs) == 2:
-            sid = 0
-            text, audio = outputs
-        else:
-            # with sid
-            sid, text, audio = preproc(path)
-        # callibrate speaker id
-        return start + sid, text, audio
+        # preprocessing
+        _, _, audio = self.mapper[path](path)
+        # int, str
+        sid, text = self.transcript.get(path, (-1, ''))
+        return sid, text, audio
