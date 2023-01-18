@@ -3,6 +3,7 @@ import json
 import os
 from typing import Callable, Dict, List, Optional, Tuple
 
+import librosa
 import numpy as np
 from tqdm import tqdm
 
@@ -12,13 +13,28 @@ from .. import datasets
 class DumpReader(datasets.DataReader):
     """Dumped loader
     """
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: str, sr: Optional[int] = None):
         """Initializer.
         Args:
             data_dir: path to the mother directory.
+            sr: target sampling rate.
         """
-        self.data_dir = data_dir
-        self.speakers_, self.transcript = self.load_data(data_dir)
+        prev_sr, self.speakers_, self.transcript = self.load_data(data_dir)
+        assert not (sr is None and prev_sr is None), \
+            'sampling rate not found, pass `sr` to the DumpReader'
+
+        if prev_sr is None:
+            # by assertion, `sr` is not None if `prev_sr` is None
+            import warnings
+            warnings.warn(
+                'sampling rate of the `DumpReader` is not found on metadata'
+                f', assume `sr`(={sr}) as native sampling rate of `DumpReader`')
+            prev_sr = sr
+        elif sr is None:
+            # prev_sr is not None and sr is None
+            sr = prev_sr
+        # alias
+        self.prev_sr, self.sr = prev_sr, sr
 
     def dataset(self) -> Dict[str, Tuple[int, str]]:
         """Return file reader.
@@ -41,12 +57,12 @@ class DumpReader(datasets.DataReader):
         """
         return self.preprocessor
 
-    def load_data(self, data_dir: str) -> Tuple[List[str], Dict[str, Tuple[int, str]]]:
+    def load_data(self, data_dir: str) -> Tuple[int, List[str], Dict[str, Tuple[int, str]]]:
         """Load the file lists.
         Args:
             data_dir: path to the mother directory.
         Returns:
-            list of speakers, file paths and transcripts.
+            sampling rate, list of speakers and transcripts.
         """
         INTER = 'dumped'
         with open(os.path.join(data_dir, 'meta.json')) as f:
@@ -61,7 +77,7 @@ class DumpReader(datasets.DataReader):
                 path = os.path.join(data_dir, INTER, f'{i}.npy')
                 transcripts[path] = (sid, text)
 
-        return speakers, transcripts
+        return meta.get('sr', None), speakers, transcripts
 
     def preprocessor(self, path: str) -> Tuple[int, str, np.ndarray]:
         """Load dumped.
@@ -73,7 +89,11 @@ class DumpReader(datasets.DataReader):
                 text: str, text.
                 audio: [np.float32; [T]], raw speech signal in range(-1, 1).
         """
-        return tuple(np.load(path, allow_pickle=True))
+        sid, text, audio = tuple(np.load(path, allow_pickle=True))
+        if self.prev_sr != self.sr:
+            # resampling
+            audio = librosa.resample(audio, self.prev_sr, self.sr)
+        return sid, text, audio
 
     @staticmethod
     def dumper(args) -> Tuple[int, int, str, str]:
@@ -100,14 +120,14 @@ class DumpReader(datasets.DataReader):
     def dump(cls,
              reader: datasets.DataReader,
              out_dir: str,
-             default_sid: int = -1,
+             sr: Optional[int] = None,
              num_proc: Optional[int] = None,
              chunksize: int = 1):
         """Dump the reader.
         Args:
             reader: dataset reader.
             out_dir: path to the output directory.
-            default_sid: default speaker id for unknown.
+            sr: sampling rate of input dataset reader.
             num_proc: the number of the process for multiprocessing.
             chunksize: size of the imap_unordered chunk.
         """
@@ -120,6 +140,8 @@ class DumpReader(datasets.DataReader):
         meta = {
             sid: {'name': speaker, 'lists': []}
             for sid, speaker in enumerate(speakers)}
+        meta['sr'] = sr
+
         if num_proc is None:
             for i, path in enumerate(tqdm(dataset)):
                 outputs = preproc(path)
@@ -163,7 +185,7 @@ if __name__ == '__main__':
         DumpReader.dump(
             reader,
             args.out_dir,
-            args.default_sid,
+            args.sr,
             args.num_proc,
             args.chunksize)
         
